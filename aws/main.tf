@@ -8,53 +8,22 @@ provider "aws" {
 
 # Define variables
 
-variable "cluster_name" {
-  type = string
-}
-
-variable "aws_profile" {
-  type = string
-}
-
-variable "region" {
-  type = string
-}
-
-variable "availability_zones" {
-  type = list(string)
-}
-
-variable "tags" {
-  type = map(string)
-}
-
-variable "vpc_cidr" {
-  type = string
-}
-
-variable "tenant_name" {
-  type = string
-}
-
-variable "tenant_token" {
-  type = string
-}
-
-variable "control_plane_url" {
-  type = string
-}
-
-variable "tfy_api_key" {
-  type = string
-}
-
-variable "truefoundry_image_pull_config_json" {
-  type = string
-}
-
-variable "control_plane_install" {
-  type = bool
-}
+variable "cluster_name" {}
+variable "aws_profile" {}
+variable "region" {}
+variable "availability_zones" { type = list(string) }
+variable "tags" { type = map(string) }
+variable "vpc_cidr" {}
+variable "tenant_name" {}
+variable "tenant_token" {}
+variable "control_plane_url" {}
+variable "tfy_api_key" {}
+variable "truefoundry_image_pull_config_json" {}
+variable "control_plane_install" {}
+variable "private_subnet_cidrs" { type = list(string) }
+variable "public_subnet_cidrs" { type = list(string) }
+variable "private_subnet_ids" { type = list(string) }
+variable "public_subnet_ids" { type = list(string) }
 
 
 # Configure Terraform backend
@@ -64,28 +33,6 @@ terraform {
     key    = "terraform.tfstate"
     region = "us-east-1"
   }
-}
-
-
-
-data "aws_subnet" "selected" {
-  count = length(module.network.private_subnets_id)
-  id    = module.network.private_subnets_id[count.index]
-}
-
-locals {
-  tags = merge(
-    {
-      "terraform-module" = "efs"
-      "terraform"        = "true"
-      "cluster-name"     = var.cluster_name
-    },
-    var.tags
-  )
-  subnets = merge({ for _, v in data.aws_subnet.selected : v.availability_zone => v.id... })
-  mount_targets = merge({ for k, v in local.subnets : k => {
-    subnet_id = v[0]
-  } })
 }
 
 # Add this data source after the existing aws_eks_cluster data source
@@ -107,10 +54,10 @@ module "network" {
   azs                   = var.availability_zones
   cluster_name          = var.cluster_name
   flow_logs_enable      = false
-  private_subnets_cidrs = ["10.10.0.0/20", "10.10.16.0/20", "10.10.32.0/20", "10.10.48.0/20"]
-  private_subnets_ids   = []
-  public_subnets_cidrs  = ["10.10.176.0/20", "10.10.192.0/20", "10.10.208.0/20", "10.10.224.0/20"]
-  public_subnets_ids    = []
+  private_subnets_cidrs = var.private_subnet_cidrs
+  private_subnets_ids   = var.private_subnet_ids
+  public_subnets_cidrs  = var.public_subnet_cidrs
+  public_subnets_ids    = var.public_subnet_ids
   shim                  = false
   tags                  = var.tags
   vpc_cidr              = var.vpc_cidr
@@ -130,12 +77,12 @@ module "eks" {
   create_cloudwatch_log_group            = false
   node_security_group_additional_rules = {
     "ingress_control_plane_all" = {
-      "type"        = "ingress"
-      "cidr_blocks" = "${module.network.private_subnets_cidrs}"
       "description" = "Control plane to node all ports/protocols"
       "protocol"    = "-1"
       "from_port"   = 0
       "to_port"     = 0
+      "type"        = "ingress"
+      "cidr_blocks" = "${module.network.private_subnets_cidrs}"
     }
   }
   node_security_group_tags = {
@@ -159,9 +106,9 @@ module "ebs" {
 }
 
 module "efs" {
-  source                        = "./terraform-aws-truefoundry-efs"
+  source                        = "truefoundry/truefoundry-efs/aws"
+  version                       = "0.3.4"
   azs                           = var.availability_zones
-  mount_targets                 = local.mount_targets
   cluster_name                  = var.cluster_name
   cluster_oidc_issuer_url       = module.eks.cluster_oidc_issuer_url
   efs_node_iam_role_arn         = module.eks.eks_managed_node_groups.initial.iam_role_arn
@@ -264,12 +211,12 @@ module "argocd" {
   repo_name              = "argo"
   repo_url               = "https://argoproj.github.io/argo-helm"
   set_values = {
+    "server.extraArgs[0]"     = "--insecure"
     "server.extraArgs[1]"     = "--application-namespaces=*"
     "controller.extraArgs[0]" = "--application-namespaces=*"
     "applicationSet.enabled"  = "false"
     "notifications.enabled"   = "false"
     "dex.enabled"             = "false"
-    "server.extraArgs[0]"     = "--insecure"
   }
   token = data.aws_eks_cluster_auth.cluster.token
 }
@@ -287,72 +234,73 @@ module "truefoundry" {
   repo_name              = "truefoundry"
   repo_url               = "https://truefoundry.github.io/infra-charts"
   set_values = {
-    "clusterName" = "${var.cluster_name}"
-    "loki" = {
+    "tenantName" = "${var.tenant_name}"
+    "argoRollouts" = {
       "enabled" = true
     }
-    "prometheus" = {
+    "kubecost" = {
       "enabled" = true
-      "additionalScrapeConfigs" = [{
-        "scrape_interval" = "15s"
-        "scrape_timeout"  = "10s"
-        "metrics_path"    = "/metrics"
-        "scheme"          = "http"
-        "kubernetes_sd_configs" = [{
-          "role" = "endpoints"
-          "namespaces" = {
-            "names" = ["tfy-gpu-operator"]
-          }
-        }]
-        "relabel_configs" = [{
-          "source_labels" = ["__meta_kubernetes_pod_node_name"]
-          "action"        = "replace"
-          "target_label"  = "kubernetes_node"
-        }]
-        "job_name" = "gpu-metrics"
-      }]
     }
-    "test" = {
+    "grafana" = {
       "enabled" = false
     }
+    "elasti" = {
+      "enabled" = false
+    }
+    "jspolicy" = {
+      "enabled" = false
+    }
+    "clusterName" = "${var.cluster_name}"
+    "argoWorkflows" = {
+      "enabled" = true
+    }
+    "notebookController" = {
+      "enabled"             = false
+      "defaultStorageClass" = ""
+    }
+    "metricsServer" = {
+      "enabled" = true
+    }
+    "truefoundry" = {
+      "enabled" = "${var.control_plane_install}"
+      "devMode" = {
+        "enabled" = false
+      }
+      "truefoundryBootstrap" = {
+        "enabled" = true
+      }
+      "database" = {
+        "host"     = "${module.tfy-control-plane.truefoundry_db_address}"
+        "name"     = "${module.tfy-control-plane.truefoundry_db_database_name}"
+        "username" = "${module.tfy-control-plane.truefoundry_db_username}"
+        "password" = "${module.tfy-control-plane.truefoundry_db_password}"
+      }
+      "tfyApiKey"                      = "${var.tfy_api_key}"
+      "truefoundryImagePullConfigJSON" = "${var.truefoundry_image_pull_config_json}"
+    }
+    "keda" = {
+      "enabled" = true
+    }
+    "tfyAgent" = {
+      "enabled"      = true
+      "clusterToken" = "${var.tenant_token}"
+    }
+    "controlPlaneURL" = "${var.control_plane_url}"
     "tolerations" = [{
       "key"      = "CriticalAddonsOnly"
       "value"    = "true"
       "effect"   = "NoSchedule"
       "operator" = "Equal"
     }]
-    "argoRollouts" = {
-      "enabled" = true
-    }
-    "keda" = {
-      "enabled" = true
-    }
-    "kubecost" = {
-      "enabled" = true
-    }
-    "jspolicy" = {
-      "enabled" = false
-    }
-    "tfyAgent" = {
-      "enabled"      = true
-      "clusterToken" = "${var.tenant_token}"
-    }
-    "elasti" = {
-      "enabled" = false
-    }
-    "tenantName" = "${var.tenant_name}"
-    "argoWorkflows" = {
+    "argocd" = {
       "enabled" = true
     }
     "aws" = {
-      "inferentia" = {
-        "enabled" = false
-      }
       "awsLoadBalancerController" = {
-        "roleArn" = "${module.aws-load-balancer-controller.elb_iam_role_arn}"
-        "vpcId"   = "${module.network.vpc_id}"
         "region"  = "${var.region}"
         "enabled" = true
+        "roleArn" = "${module.aws-load-balancer-controller.elb_iam_role_arn}"
+        "vpcId"   = "${module.network.vpc_id}"
       }
       "karpenter" = {
         "enabled"           = true
@@ -363,45 +311,31 @@ module "truefoundry" {
         "interruptionQueue" = "${module.karpenter.karpenter_sqs_name}"
       }
       "awsEbsCsiDriver" = {
-        "enabled" = true
         "roleArn" = "${module.ebs.iam_role_arn}"
+        "enabled" = true
       }
       "awsEfsCsiDriver" = {
-        "region"       = "${var.region}"
-        "roleArn"      = "${module.efs.efs_role_arn}"
         "enabled"      = true
         "fileSystemId" = "${module.efs.efs_id}"
+        "region"       = "${var.region}"
+        "roleArn"      = "${module.efs.efs_role_arn}"
       }
-    }
-    "truefoundry" = {
-      "database" = {
-        "host"     = "${module.tfy-control-plane.truefoundry_db_address}"
-        "name"     = "${module.tfy-control-plane.truefoundry_db_database_name}"
-        "username" = "${module.tfy-control-plane.truefoundry_db_username}"
-        "password" = "${module.tfy-control-plane.truefoundry_db_password}"
-      }
-      "tfyApiKey"                      = "${var.tfy_api_key}"
-      "truefoundryImagePullConfigJSON" = "${var.truefoundry_image_pull_config_json}"
-      "enabled"                        = "${var.control_plane_install}"
-      "devMode" = {
+      "inferentia" = {
         "enabled" = false
-      }
-      "truefoundryBootstrap" = {
-        "enabled" = true
       }
     }
     "istio" = {
       "enabled" = true
       "gateway" = {
         "annotations" = {
+          "service.beta.kubernetes.io/aws-load-balancer-type"                              = "external"
           "service.beta.kubernetes.io/aws-load-balancer-scheme"                            = "internet-facing"
+          "service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags"          = "cluster-name=${var.cluster_name},truefoundry.com/managed=true,owner=Truefoundry,application=tfy-istio-ingress"
+          "service.beta.kubernetes.io/aws-load-balancer-ssl-cert"                          = "arn:aws:acm:eu-west-1:526077812922:certificate/48139a75-5445-4960-8548-04371a1605bb"
+          "service.beta.kubernetes.io/aws-load-balancer-name"                              = "${var.cluster_name}"
+          "service.beta.kubernetes.io/aws-load-balancer-ssl-ports"                         = "https"
           "service.beta.kubernetes.io/aws-load-balancer-alpn-policy"                       = "HTTP2Preferred"
           "service.beta.kubernetes.io/aws-load-balancer-backend-protocol"                  = "tcp"
-          "service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags"          = "cluster-name=${var.cluster_name},truefoundry.com/managed=true,owner=Truefoundry,application=tfy-istio-ingress"
-          "service.beta.kubernetes.io/aws-load-balancer-name"                              = "${var.cluster_name}"
-          "service.beta.kubernetes.io/aws-load-balancer-type"                              = "external"
-          "service.beta.kubernetes.io/aws-load-balancer-ssl-cert"                          = "arn:aws:acm:eu-west-1:526077812922:certificate/48139a75-5445-4960-8548-04371a1605bb"
-          "service.beta.kubernetes.io/aws-load-balancer-ssl-ports"                         = "https"
           "service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled" = "true"
         }
       }
@@ -413,26 +347,39 @@ module "truefoundry" {
         "httpsRedirect" = true
       }
     }
-    "grafana" = {
-      "enabled" = false
-    }
-    "controlPlaneURL" = "${var.control_plane_url}"
-    "argocd" = {
+    "prometheus" = {
+      "additionalScrapeConfigs" = [{
+        "kubernetes_sd_configs" = [{
+          "namespaces" = {
+            "names" = ["tfy-gpu-operator"]
+          }
+          "role" = "endpoints"
+        }]
+        "relabel_configs" = [{
+          "source_labels" = ["__meta_kubernetes_pod_node_name"]
+          "action"        = "replace"
+          "target_label"  = "kubernetes_node"
+        }]
+        "job_name"        = "gpu-metrics"
+        "scrape_interval" = "15s"
+        "scrape_timeout"  = "10s"
+        "metrics_path"    = "/metrics"
+        "scheme"          = "http"
+      }]
       "enabled" = true
-    }
-    "notebookController" = {
-      "enabled"             = false
-      "defaultStorageClass" = ""
     }
     "certManager" = {
       "enabled" = false
     }
-    "metricsServer" = {
+    "gpu" = {
+      "enabled"     = true
+      "clusterType" = "awsEks"
+    }
+    "loki" = {
       "enabled" = true
     }
-    "gpu" = {
-      "clusterType" = "awsEks"
-      "enabled"     = true
+    "test" = {
+      "enabled" = false
     }
   }
   token = data.aws_eks_cluster_auth.cluster.token
@@ -464,5 +411,4 @@ output "private_subnets_id" {
 output "vpc_id" {
   value = module.network.vpc_id
 }
-
 
