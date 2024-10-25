@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    bucket = "harshit-poc"
+    bucket = "<bucket-name>"
     key    = "terraform.tfstate"
     region = "us-east-1"
   }

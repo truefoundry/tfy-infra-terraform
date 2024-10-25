@@ -65,8 +65,8 @@ Additionally, you need:
 1. **Clone Repository**
 
    ```bash
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/truefoundry/tfy-infra-terraform.git
+   cd tfy-infra-terraform/aws
    ```
 
 2. **Initialize Terraform**
@@ -78,7 +78,6 @@ Additionally, you need:
 3. **Apply Network Module**
 
    ```bash
-   terraform plan -target module.network -var-file=tfy.tfvars
    terraform apply -target=module.network -var-file=tfy.tfvars
    ```
 
@@ -102,13 +101,13 @@ Additionally, you need:
 2. **Verify Cluster Connection**
 
    ```bash
-   kubectl get nodes
+   kubectl cluster-info
    ```
 
 3. **Confirm Helm Chart Installation**
 
    ```bash
-   helm list -n argocd
+   helm status tfy-k8s-aws-eks-infra -n argocd
    ```
 
 4. **Verify Control Plane**
@@ -120,7 +119,7 @@ Additionally, you need:
 5. **Confirm ArgoCD Apps**
 
    ```bash
-   argocd app list
+   kubectl get applications -n argocd
    ```
 
 ## Troubleshooting
@@ -132,7 +131,7 @@ If you encounter issues:
 3. Check Terraform and kubectl logs for error messages.
 4. Consult Truefoundry documentation for specific component issues.
 
-For additional support, contact Truefoundry support or consult community forums.
+For additional support, contact Truefoundry support
 
 ## Cleanup
 
