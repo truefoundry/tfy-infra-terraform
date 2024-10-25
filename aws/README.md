@@ -1,6 +1,167 @@
-# Truefoundry Infrastructure Setup
+# Truefoundry Infrastructure Setup on AWS
 
 This repository contains Terraform configurations to set up the Truefoundry infrastructure on AWS.
+
+<!-- BEGIN_TF_DOCS -->
+## Requirements
+
+1. [Prerequisites](#prerequisites)
+2. [Initial Setup](#initial-setup)
+3. [Installation](#installation)
+4. [Post-Installation](#post-installation)
+5. [Troubleshooting](#troubleshooting)
+6. [Cleanup](#cleanup)
+7. [Known Issues](#known-issues)
+8. [Next Steps](#next-steps)
+9. [Terraform Documentation](#terraform-documentation)
+
+
+## Prerequisites
+
+Ensure you have the following tools installed:
+
+| Tool      | Version  |
+|-----------|----------|
+| AWS CLI   | 2.17.50+ |
+| Terraform | v1.9.8+  |
+| kubectl   | v1.31.1+ |
+| Git       | 2.39.5+  |
+
+Additionally, you need:
+
+- Access to an AWS account with necessary permissions
+- A Truefoundry account and API key
+- An Amazon S3 bucket for storing Terraform state
+
+## Initial Setup
+
+1. **Create S3 Bucket for Terraform State**
+
+   ```bash
+   aws s3api create-bucket --bucket your-terraform-state-bucket-name --region your-aws-region
+   aws s3api put-bucket-versioning --bucket your-terraform-state-bucket-name --versioning-configuration Status=Enabled
+   ```
+
+2. **Update `backend.tf`**
+
+   ```hcl
+   terraform {
+     backend "s3" {
+       bucket = "your-terraform-state-bucket-name"
+       key    = "terraform.tfstate"
+       region = "your-aws-region"
+     }
+   }
+   ```
+
+3. **Prepare Configuration**
+
+   ```bash
+   cp tfy.tfvars.template tfy.tfvars
+   # Edit tfy.tfvars with your configuration
+   ```
+
+## Installation
+
+1. **Clone Repository**
+
+   ```bash
+   git clone https://github.com/truefoundry/tfy-infra-terraform.git
+   cd tfy-infra-terraform/aws
+   ```
+
+2. **Initialize Terraform**
+
+   ```bash
+   terraform init
+   ```
+
+
+3. **Apply Network Module**
+
+   ```bash
+   terraform apply -target=module.network -var-file=tfy.tfvars
+   ```
+
+
+4. **Apply Remaining Modules**
+
+   ```bash
+   terraform apply -var-file=tfy.tfvars
+   ```
+
+## Post-Installation
+
+1. **Configure kubectl**
+
+   ```bash
+   export REGION=<your-aws-region>
+   export AWS_PROFILE=<your-aws-profile>
+   export CLUSTER_NAME=<your-cluster-name>
+   aws eks --region $REGION --profile $AWS_PROFILE update-kubeconfig --name $CLUSTER_NAME
+   ```
+
+2. **Verify Cluster Connection**
+
+   ```bash
+   kubectl cluster-info
+   ```
+
+3. **Confirm Helm Chart Installation**
+
+   ```bash
+   helm status tfy-k8s-aws-eks-infra -n argocd
+   ```
+
+4. **Verify Control Plane**
+
+   ```bash
+   kubectl get pods -n truefoundry
+   ```
+
+5. **Confirm ArgoCD Apps**
+
+   ```bash
+   kubectl get applications -n argocd
+   ```
+
+## Troubleshooting
+
+If you encounter issues:
+
+1. Verify all prerequisites are correctly installed and configured.
+2. Ensure AWS credentials have necessary permissions.
+3. Check Terraform and kubectl logs for error messages.
+4. Consult Truefoundry documentation for specific component issues.
+
+For additional support, contact Truefoundry support
+
+## Cleanup
+
+To remove all created resources:
+
+```bash
+terraform destroy -var-file=tfy.tfvars
+```
+
+## Known Issues
+
+1. **Karpenter Nodes**: May require manual deletion.
+2. **Security Groups**: Check for lingering deletions.
+3. **Persistent Volumes**: Not automatically removed, manual deletion required for:
+   - ArgoCD resources (Grafana, Kubecost, Truefoundry, Prometheus, Loki)
+4. **EBS Volumes**: Check and delete manually.
+5. **Endpoints**: Manually delete EFS and GuardDuty endpoints.
+
+## Next Steps
+
+After successful installation:
+
+1. Set up monitoring and logging
+2. Configure backup and disaster recovery
+3. Implement security best practices
+
+## Terraform Documentation
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -37,6 +198,7 @@ No requirements.
 
 ## Inputs
 
+
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_availability_zones"></a> [availability\_zones](#input\_availability\_zones) | List of availability zones to use in the specified region | `list(string)` | n/a | yes |
@@ -67,229 +229,3 @@ No requirements.
 | <a name="output_private_subnets_id"></a> [private\_subnets\_id](#output\_private\_subnets\_id) | n/a |
 | <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | n/a |
 <!-- END_TF_DOCS -->
-
-## Prerequisites
-
-| Tool      | Version  |
-|-----------|----------|
-| AWS CLI   | 2.17.50  |
-| Terraform | v1.9.8   |
-| kubectl   | v1.31.1  |
-| Git       | 2.39.5   |
-
-- Access to AWS account with necessary permissions
-- Truefoundry account and API key
-- Amazon S3 bucket created for storing Terraform state
-
-## Initialization
-
-Before you begin, make sure you have the following information ready:
-
-- AWS account credentials
-- Truefoundry tenant name and token
-- Desired AWS region and availability zones
-- VPC CIDR block
-
-### Create S3 Bucket for Terraform State
-
-1. Create an S3 bucket to store the Terraform state:
-
-```
-   aws s3api create-bucket --bucket your-terraform-state-bucket-name --region your-aws-region   
-   ```
-
-   Replace `your-terraform-state-bucket-name` with a unique bucket name and `your-aws-region` with your desired AWS region.
-
-2. Enable versioning on the bucket:
-
-```
-   aws s3api put-bucket-versioning --bucket your-terraform-state-bucket-name --versioning-configuration Status=Enabled   
-   ```
-
-3. Update the `backend.tf` file with your bucket name:
-
-```hcl
-   terraform {
-     backend "s3" {
-       bucket = "your-terraform-state-bucket-name"
-       key    = "terraform.tfstate"
-       region = "your-aws-region"
-     }
-   }
-   ```
-
-## Setup Instructions
-
-1. Clone this repository:
-
-```
-   git clone <repository-url>
-   cd <repository-directory>   
-   ```
-
-2. Copy the tfvars template and fill in your values:  
-
-```
-   cp tfy.tfvars.template tfy.tfvars   
-   ```
-
-   Edit `tfy.tfvars` and replace the placeholder values with your actual configuration.
-
-3. Initialize Terraform with the upgrade option:  
-
- ```
-   terraform init    
-   ```
-
-4. Plan the Network module changes:  
-
-```
-
-   terraform plan -target module.network -var-file=tfy.tfvars
-
-   ```
-
-5. Apply the Network module changes:  
-
-```
-
-   terraform apply -target=module.network -var-file=tfy.tfvars
-
-   ```
-
-6. After successful application, configure kubectl to interact with your new EKS cluster:  
-
-```
-
-   aws eks update-kubeconfig --name <cluster-name> --region <aws-region>   
-   ```
-
-8. Configure kubectl:
-
-   ```
-   export REGION=<your-aws-region>
-   export AWS_PROFILE=<your-aws-profile>
-   export CLUSTER_NAME=<your-cluster-name>
-   aws eks --region $REGION --profile $AWS_PROFILE update-kubeconfig --name $CLUSTER_NAME
-   ```
-
-   This will update your kubeconfig and set the new kubectl context.
-
-9. Verify the cluster connection:
-
-   ```
-   kubectl get nodes
-   ```
-
-10. Confirm Helm chart installation:
-
-    ```
-    helm list -A
-    ```
-
-    This will show all installed Helm charts across all namespaces.
-
-11. Check Tfy-istio-ingress:
-
-    ```
-    kubectl get svc -n istio-system
-    ```
-
-    Look for the `tfy-istio-ingress` service.
-
-12. Set Up DNS and ACM:
-    a. Obtain the Load Balancer DNS name:
-
-       ```
-       kubectl get svc -n istio-system tfy-istio-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
-       ```
-
-    b. In your DNS provider, create a CNAME record pointing your desired domain to this Load Balancer DNS name.
-    c. Request an ACM certificate for your domain:
-
-       ```
-       aws acm request-certificate --domain-name yourdomain.com --validation-method DNS --region $REGION
-       ```
-
-    d. Follow the instructions provided by AWS to validate the certificate using DNS validation.
-
-13. Verify Control Plane:
-    a. Check the status of the control plane pods:
-
-       ```
-       kubectl get pods -n truefoundry
-       ```
-
-       Ensure all pods are in the 'Running' state.
-    b. Access the control plane URL in your browser to verify it's up and running.
-
-14. Confirm ArgoCD apps:
-    - Via CLI:
-
-     ```
-      argocd app list      
-      ```
-
-    - Or check the ArgoCD UI for the list of applications and their sync status.
-
-## Troubleshooting
-
-If you encounter any issues during the installation process, please check the following:
-
-1. Ensure all prerequisites are correctly installed and configured.
-2. Verify that your AWS credentials have the necessary permissions.
-3. Check the Terraform and kubectl logs for any error messages.
-4. Consult the Truefoundry documentation for specific component issues.
-
-For additional support, please contact Truefoundry support or consult the community forums.
-
-## Cleanup
-
-To remove all created resources:
-
-1. Destroy the Terraform-managed infrastructure:   ```
-   terraform destroy -var-file=tfy.tfvars   ```
-
-2. Confirm the deletion of resources in your AWS console.
-
-## Caveats
-
-Known issues and manual cleanup steps:
-
-1. Karpenter nodes:
-   - Not removed properly during cleanup
-   - Manual deletion required
-
-2. Security groups:
-   - May have lingering deletions
-   - Check and remove manually if necessary
-
-3. Persistent volumes not automatically removed:
-   - ArgoCD resources: (better to do helm uninstall before terraform destroy)
-     - Grafana
-     - Kubecost
-     - Truefoundry (NATS 1, 2, 3)
-     - Prometheus
-     - Loki
-   - Action: Manually check and delete these volumes
-
-4. EBS volumes:
-   - Check and delete volumes created by EBS module manually
-
-5. Additional steps:
-   - Verify and manually remove any remaining Karpenter nodes
-   - Double-check for any other lingering resources in your AWS console
-6. Endpoints:
-   - Check and delete endpoints created by EFS module manually
-   - Check and delete guardduty endpoints
-   - Check and delete s3 endpoints
-
-Note: This action will delete all resources created by this Terraform configuration. Make sure to backup any important data before proceeding.
-
-## Next Steps
-
-After successful installation, consider the following next steps:
-
-1. Set up monitoring and logging
-2. Configure backup and disaster recovery
-3. Implement security best practices
