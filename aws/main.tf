@@ -6,18 +6,7 @@ provider "aws" {
   profile = var.aws_profile
 }
 
-# Configure Terraform backend
-terraform {
-  backend "s3" {
-    bucket = "harshit-poc"
-    key    = "terraform.tfstate"
-    region = "us-east-1"
-  }
-}
-
-
 # Define variables with more specific types and descriptions
-
 variable "cluster_name" {
   type        = string
   description = "Name of the EKS cluster"
@@ -457,27 +446,28 @@ module "truefoundry" {
 # Define outputs
 
 output "cluster_endpoint" {
-  value = module.eks.cluster_endpoint
+  description = "EKS cluster endpoint"
+  value       = module.eks.cluster_endpoint
 }
 
-output "host" {
-  value = module.tfy-control-plane.truefoundry_db_address
-}
-
-output "name" {
-  value = module.tfy-control-plane.truefoundry_db_database_name
+output "truefoundry_db_address" {
+  description = "Truefoundry database address"
+  value       = module.tfy-control-plane.truefoundry_db_address
 }
 
 output "oidc_provider_arn" {
-  value = module.eks.oidc_provider_arn
+  description = "OIDC provider ARN"
+  value       = module.eks.oidc_provider_arn
 }
 
 output "private_subnets_id" {
-  value = module.network.private_subnets_id
+  description = "Private subnets IDs"
+  value       = module.network.private_subnets_id
 }
 
 output "vpc_id" {
-  value = module.network.vpc_id
+  description = "VPC ID"
+  value       = module.network.vpc_id
 }
 
 
