@@ -142,6 +142,7 @@ Before you begin, make sure you have the following information ready:
    ```
 
 4. Plan the Network module changes:  
+
 ```
 
    terraform plan -target module.network -var-file=tfy.tfvars
@@ -149,6 +150,7 @@ Before you begin, make sure you have the following information ready:
    ```
 
 5. Apply the Network module changes:  
+
 ```
 
    terraform apply -target=module.network -var-file=tfy.tfvars
@@ -156,6 +158,7 @@ Before you begin, make sure you have the following information ready:
    ```
 
 6. After successful application, configure kubectl to interact with your new EKS cluster:  
+
 ```
 
    aws eks update-kubeconfig --name <cluster-name> --region <aws-region>   
@@ -248,6 +251,38 @@ To remove all created resources:
    terraform destroy -var-file=tfy.tfvars   ```
 
 2. Confirm the deletion of resources in your AWS console.
+
+## Caveats
+
+Known issues and manual cleanup steps:
+
+1. Karpenter nodes:
+   - Not removed properly during cleanup
+   - Manual deletion required
+
+2. Security groups:
+   - May have lingering deletions
+   - Check and remove manually if necessary
+
+3. Persistent volumes not automatically removed:
+   - ArgoCD resources: (better to do helm uninstall before terraform destroy)
+     - Grafana
+     - Kubecost
+     - Truefoundry (NATS 1, 2, 3)
+     - Prometheus
+     - Loki
+   - Action: Manually check and delete these volumes
+
+4. EBS volumes:
+   - Check and delete volumes created by EBS module manually
+
+5. Additional steps:
+   - Verify and manually remove any remaining Karpenter nodes
+   - Double-check for any other lingering resources in your AWS console
+6. Endpoints:
+   - Check and delete endpoints created by EFS module manually
+   - Check and delete guardduty endpoints
+   - Check and delete s3 endpoints
 
 Note: This action will delete all resources created by this Terraform configuration. Make sure to backup any important data before proceeding.
 
