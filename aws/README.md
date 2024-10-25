@@ -5,167 +5,6 @@ This repository contains Terraform configurations to set up the Truefoundry infr
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-1. [Prerequisites](#prerequisites)
-2. [Initial Setup](#initial-setup)
-3. [Installation](#installation)
-4. [Post-Installation](#post-installation)
-5. [Troubleshooting](#troubleshooting)
-6. [Cleanup](#cleanup)
-7. [Known Issues](#known-issues)
-8. [Next Steps](#next-steps)
-9. [Terraform Documentation](#terraform-documentation)
-
-
-## Prerequisites
-
-Ensure you have the following tools installed:
-
-| Tool      | Version  |
-|-----------|----------|
-| AWS CLI   | 2.17.50+ |
-| Terraform | v1.9.8+  |
-| kubectl   | v1.31.1+ |
-| Git       | 2.39.5+  |
-
-Additionally, you need:
-
-- Access to an AWS account with necessary permissions
-- A Truefoundry account and API key
-- An Amazon S3 bucket for storing Terraform state
-
-## Initial Setup
-
-1. **Create S3 Bucket for Terraform State**
-
-   ```bash
-   aws s3api create-bucket --bucket your-terraform-state-bucket-name --region your-aws-region
-   aws s3api put-bucket-versioning --bucket your-terraform-state-bucket-name --versioning-configuration Status=Enabled
-   ```
-
-2. **Update `backend.tf`**
-
-   ```hcl
-   terraform {
-     backend "s3" {
-       bucket = "your-terraform-state-bucket-name"
-       key    = "terraform.tfstate"
-       region = "your-aws-region"
-     }
-   }
-   ```
-
-3. **Prepare Configuration**
-
-   ```bash
-   cp tfy.tfvars.template tfy.tfvars
-   # Edit tfy.tfvars with your configuration
-   ```
-
-## Installation
-
-1. **Clone Repository**
-
-   ```bash
-   git clone https://github.com/truefoundry/tfy-infra-terraform.git
-   cd tfy-infra-terraform/aws
-   ```
-
-2. **Initialize Terraform**
-
-   ```bash
-   terraform init
-   ```
-
-
-3. **Apply Network Module**
-
-   ```bash
-   terraform apply -target=module.network -var-file=tfy.tfvars
-   ```
-
-
-4. **Apply Remaining Modules**
-
-   ```bash
-   terraform apply -var-file=tfy.tfvars
-   ```
-
-## Post-Installation
-
-1. **Configure kubectl**
-
-   ```bash
-   export REGION=<your-aws-region>
-   export AWS_PROFILE=<your-aws-profile>
-   export CLUSTER_NAME=<your-cluster-name>
-   aws eks --region $REGION --profile $AWS_PROFILE update-kubeconfig --name $CLUSTER_NAME
-   ```
-
-2. **Verify Cluster Connection**
-
-   ```bash
-   kubectl cluster-info
-   ```
-
-3. **Confirm Helm Chart Installation**
-
-   ```bash
-   helm status tfy-k8s-aws-eks-infra -n argocd
-   ```
-
-4. **Verify Control Plane**
-
-   ```bash
-   kubectl get pods -n truefoundry
-   ```
-
-5. **Confirm ArgoCD Apps**
-
-   ```bash
-   kubectl get applications -n argocd
-   ```
-
-## Troubleshooting
-
-If you encounter issues:
-
-1. Verify all prerequisites are correctly installed and configured.
-2. Ensure AWS credentials have necessary permissions.
-3. Check Terraform and kubectl logs for error messages.
-4. Consult Truefoundry documentation for specific component issues.
-
-For additional support, contact Truefoundry support
-
-## Cleanup
-
-To remove all created resources:
-
-```bash
-terraform destroy -var-file=tfy.tfvars
-```
-
-## Known Issues
-
-1. **Karpenter Nodes**: May require manual deletion.
-2. **Security Groups**: Check for lingering deletions.
-3. **Persistent Volumes**: Not automatically removed, manual deletion required for:
-   - ArgoCD resources (Grafana, Kubecost, Truefoundry, Prometheus, Loki)
-4. **EBS Volumes**: Check and delete manually.
-5. **Endpoints**: Manually delete EFS and GuardDuty endpoints.
-
-## Next Steps
-
-After successful installation:
-
-1. Set up monitoring and logging
-2. Configure backup and disaster recovery
-3. Implement security best practices
-
-## Terraform Documentation
-
-<!-- BEGIN_TF_DOCS -->
-## Requirements
-
 No requirements.
 
 ## Providers
@@ -198,7 +37,6 @@ No requirements.
 
 ## Inputs
 
-
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_availability_zones"></a> [availability\_zones](#input\_availability\_zones) | List of availability zones to use in the specified region | `list(string)` | n/a | yes |
@@ -222,10 +60,9 @@ No requirements.
 
 | Name | Description |
 |------|-------------|
-| <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint) | n/a |
-| <a name="output_host"></a> [host](#output\_host) | n/a |
-| <a name="output_name"></a> [name](#output\_name) | n/a |
-| <a name="output_oidc_provider_arn"></a> [oidc\_provider\_arn](#output\_oidc\_provider\_arn) | n/a |
-| <a name="output_private_subnets_id"></a> [private\_subnets\_id](#output\_private\_subnets\_id) | n/a |
-| <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | n/a |
+| <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint) | EKS cluster endpoint |
+| <a name="output_oidc_provider_arn"></a> [oidc\_provider\_arn](#output\_oidc\_provider\_arn) | OIDC provider ARN |
+| <a name="output_private_subnets_id"></a> [private\_subnets\_id](#output\_private\_subnets\_id) | Private subnets IDs |
+| <a name="output_truefoundry_db_address"></a> [truefoundry\_db\_address](#output\_truefoundry\_db\_address) | Truefoundry database address |
+| <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | VPC ID |
 <!-- END_TF_DOCS -->
