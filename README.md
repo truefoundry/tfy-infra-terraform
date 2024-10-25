@@ -4,12 +4,16 @@ This repository contains Terraform configurations to set up the Truefoundry infr
 
 ## Prerequisites
 
-1. AWS CLI installed and configured
-2. Terraform installed (version 0.14.0 or later)
-3. kubectl installed
-4. Git installed
-5. Access to AWS account with necessary permissions
-6. Truefoundry account and API key
+| Tool      | Version  |
+|-----------|----------|
+| AWS CLI   | 2.17.50  |
+| Terraform | v1.9.8   |
+| kubectl   | v1.31.1  |
+| Git       | 2.39.5   |
+
+- Access to AWS account with necessary permissions
+- Truefoundry account and API key
+- Amazon S3 bucket created for storing Terraform state
 
 ## Initialization
 
@@ -17,7 +21,6 @@ Before you begin, make sure you have the following information ready:
 
 - AWS account credentials
 - Truefoundry tenant name and token
-- Truefoundry control plane URL and API key
 - Desired AWS region and availability zones
 - VPC CIDR block
 
@@ -87,10 +90,13 @@ Before you begin, make sure you have the following information ready:
 - `tenant_name`: Name of your Truefoundry tenant
 - `tenant_token`: Token for your Truefoundry tenant
 - `control_plane_url`: URL of the Truefoundry control plane
+- `tags`: Map of tags to apply to resources
+
+## Install Control Plane
+
 - `tfy_api_key`: API key for Truefoundry
 - `truefoundry_image_pull_config_json`: JSON configuration for pulling Truefoundry images
 - `control_plane_install`: Boolean flag to control installation of the control plane
-- `tags`: Map of tags to apply to resources
 
 ## Outputs
 
