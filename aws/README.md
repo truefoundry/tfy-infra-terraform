@@ -151,13 +151,21 @@ Before you begin, make sure you have the following information ready:
 
 5. Apply the Network module changes:  
 
+
 ```
 
    terraform apply -target=module.network -var-file=tfy.tfvars
 
    ```
 
+Apply the rest of the modules:
+
+```
+   terraform apply -var-file=tfy.tfvars
+```
+
 6. After successful application, configure kubectl to interact with your new EKS cluster:  
+
 
 ```
 
@@ -184,34 +192,10 @@ Before you begin, make sure you have the following information ready:
 10. Confirm Helm chart installation:
 
     ```
-    helm list -A
+    helm list -n argocd 
     ```
 
-    This will show all installed Helm charts across all namespaces.
-
-11. Check Tfy-istio-ingress:
-
-    ```
-    kubectl get svc -n istio-system
-    ```
-
-    Look for the `tfy-istio-ingress` service.
-
-12. Set Up DNS and ACM:
-    a. Obtain the Load Balancer DNS name:
-
-       ```
-       kubectl get svc -n istio-system tfy-istio-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
-       ```
-
-    b. In your DNS provider, create a CNAME record pointing your desired domain to this Load Balancer DNS name.
-    c. Request an ACM certificate for your domain:
-
-       ```
-       aws acm request-certificate --domain-name yourdomain.com --validation-method DNS --region $REGION
-       ```
-
-    d. Follow the instructions provided by AWS to validate the certificate using DNS validation.
+    Confirm the helm chart `tfy-k8s-aws-eks-inframold` is in Deployed state.
 
 13. Verify Control Plane:
     a. Check the status of the control plane pods:
