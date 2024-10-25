@@ -39,22 +39,22 @@ No requirements.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_availability_zones"></a> [availability\_zones](#input\_availability\_zones) | n/a | `list(string)` | n/a | yes |
-| <a name="input_aws_profile"></a> [aws\_profile](#input\_aws\_profile) | n/a | `any` | n/a | yes |
-| <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | n/a | `any` | n/a | yes |
-| <a name="input_control_plane_install"></a> [control\_plane\_install](#input\_control\_plane\_install) | n/a | `any` | n/a | yes |
-| <a name="input_control_plane_url"></a> [control\_plane\_url](#input\_control\_plane\_url) | n/a | `any` | n/a | yes |
-| <a name="input_private_subnet_cidrs"></a> [private\_subnet\_cidrs](#input\_private\_subnet\_cidrs) | n/a | `list(string)` | n/a | yes |
-| <a name="input_private_subnet_ids"></a> [private\_subnet\_ids](#input\_private\_subnet\_ids) | n/a | `list(string)` | n/a | yes |
-| <a name="input_public_subnet_cidrs"></a> [public\_subnet\_cidrs](#input\_public\_subnet\_cidrs) | n/a | `list(string)` | n/a | yes |
-| <a name="input_public_subnet_ids"></a> [public\_subnet\_ids](#input\_public\_subnet\_ids) | n/a | `list(string)` | n/a | yes |
-| <a name="input_region"></a> [region](#input\_region) | n/a | `any` | n/a | yes |
-| <a name="input_tags"></a> [tags](#input\_tags) | n/a | `map(string)` | n/a | yes |
-| <a name="input_tenant_name"></a> [tenant\_name](#input\_tenant\_name) | n/a | `any` | n/a | yes |
-| <a name="input_tenant_token"></a> [tenant\_token](#input\_tenant\_token) | n/a | `any` | n/a | yes |
-| <a name="input_tfy_api_key"></a> [tfy\_api\_key](#input\_tfy\_api\_key) | n/a | `any` | n/a | yes |
-| <a name="input_truefoundry_image_pull_config_json"></a> [truefoundry\_image\_pull\_config\_json](#input\_truefoundry\_image\_pull\_config\_json) | n/a | `any` | n/a | yes |
-| <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | n/a | `any` | n/a | yes |
+| <a name="input_availability_zones"></a> [availability\_zones](#input\_availability\_zones) | List of availability zones to use in the specified region | `list(string)` | n/a | yes |
+| <a name="input_aws_profile"></a> [aws\_profile](#input\_aws\_profile) | AWS CLI profile to use | `string` | n/a | yes |
+| <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | Name of the EKS cluster | `string` | n/a | yes |
+| <a name="input_control_plane_install"></a> [control\_plane\_install](#input\_control\_plane\_install) | Boolean flag to control installation of the control plane | `bool` | n/a | yes |
+| <a name="input_control_plane_url"></a> [control\_plane\_url](#input\_control\_plane\_url) | URL of the Truefoundry control plane | `string` | n/a | yes |
+| <a name="input_private_subnet_cidrs"></a> [private\_subnet\_cidrs](#input\_private\_subnet\_cidrs) | List of CIDR blocks for private subnets | `list(string)` | n/a | yes |
+| <a name="input_private_subnet_ids"></a> [private\_subnet\_ids](#input\_private\_subnet\_ids) | List of IDs for private subnets | `list(string)` | n/a | yes |
+| <a name="input_public_subnet_cidrs"></a> [public\_subnet\_cidrs](#input\_public\_subnet\_cidrs) | List of CIDR blocks for public subnets | `list(string)` | n/a | yes |
+| <a name="input_public_subnet_ids"></a> [public\_subnet\_ids](#input\_public\_subnet\_ids) | List of IDs for public subnets | `list(string)` | n/a | yes |
+| <a name="input_region"></a> [region](#input\_region) | AWS region to deploy resources | `string` | n/a | yes |
+| <a name="input_tags"></a> [tags](#input\_tags) | Map of tags to apply to resources | `map(string)` | n/a | yes |
+| <a name="input_tenant_name"></a> [tenant\_name](#input\_tenant\_name) | Name of your Truefoundry tenant | `string` | n/a | yes |
+| <a name="input_tenant_token"></a> [tenant\_token](#input\_tenant\_token) | Token for your Truefoundry tenant | `string` | n/a | yes |
+| <a name="input_tfy_api_key"></a> [tfy\_api\_key](#input\_tfy\_api\_key) | API key for Truefoundry | `string` | n/a | yes |
+| <a name="input_truefoundry_image_pull_config_json"></a> [truefoundry\_image\_pull\_config\_json](#input\_truefoundry\_image\_pull\_config\_json) | JSON configuration for pulling Truefoundry images | `string` | n/a | yes |
+| <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | CIDR block for the VPC | `string` | n/a | yes |
 
 ## Outputs
 
