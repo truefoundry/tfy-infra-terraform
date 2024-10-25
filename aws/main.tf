@@ -16,24 +16,90 @@ terraform {
 }
 
 
-# Define variables
+# Define variables with more specific types and descriptions
 
-variable "cluster_name" {}
-variable "aws_profile" {}
-variable "region" {}
-variable "availability_zones" { type = list(string) }
-variable "tags" { type = map(string) }
-variable "vpc_cidr" {}
-variable "tenant_name" {}
-variable "tenant_token" {}
-variable "control_plane_url" {}
-variable "tfy_api_key" {}
-variable "truefoundry_image_pull_config_json" {}
-variable "control_plane_install" {}
-variable "private_subnet_cidrs" { type = list(string) }
-variable "public_subnet_cidrs" { type = list(string) }
-variable "private_subnet_ids" { type = list(string) }
-variable "public_subnet_ids" { type = list(string) }
+variable "cluster_name" {
+  type        = string
+  description = "Name of the EKS cluster"
+}
+
+variable "aws_profile" {
+  type        = string
+  description = "AWS CLI profile to use"
+}
+
+variable "region" {
+  type        = string
+  description = "AWS region to deploy resources"
+}
+
+variable "availability_zones" {
+  type        = list(string)
+  description = "List of availability zones to use in the specified region"
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "Map of tags to apply to resources"
+}
+
+variable "vpc_cidr" {
+  type        = string
+  description = "CIDR block for the VPC"
+}
+
+variable "tenant_name" {
+  type        = string
+  description = "Name of your Truefoundry tenant"
+}
+
+variable "tenant_token" {
+  type        = string
+  description = "Token for your Truefoundry tenant"
+  sensitive   = true
+}
+
+variable "control_plane_url" {
+  type        = string
+  description = "URL of the Truefoundry control plane"
+}
+
+variable "tfy_api_key" {
+  type        = string
+  description = "API key for Truefoundry"
+  sensitive   = true
+}
+
+variable "truefoundry_image_pull_config_json" {
+  type        = string
+  description = "JSON configuration for pulling Truefoundry images"
+  sensitive   = true
+}
+
+variable "control_plane_install" {
+  type        = bool
+  description = "Boolean flag to control installation of the control plane"
+}
+
+variable "private_subnet_cidrs" {
+  type        = list(string)
+  description = "List of CIDR blocks for private subnets"
+}
+
+variable "public_subnet_cidrs" {
+  type        = list(string)
+  description = "List of CIDR blocks for public subnets"
+}
+
+variable "private_subnet_ids" {
+  type        = list(string)
+  description = "List of IDs for private subnets"
+}
+
+variable "public_subnet_ids" {
+  type        = list(string)
+  description = "List of IDs for public subnets"
+}
 
 
 
@@ -68,7 +134,6 @@ module "network" {
 
 module "eks" {
   source                                 = "truefoundry/truefoundry-cluster/aws"
-  depends_on                             = [module.network]
   version                                = "0.6.4"
   cloudwatch_log_group_retention_in_days = "1"
   cluster_addons_coredns_version         = "v1.11.3-eksbuild.1"
@@ -414,4 +479,5 @@ output "private_subnets_id" {
 output "vpc_id" {
   value = module.network.vpc_id
 }
+
 

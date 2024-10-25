@@ -138,7 +138,8 @@ Before you begin, make sure you have the following information ready:
 3. Initialize Terraform with the upgrade option:  
 
  ```
-   terraform init    ```
+   terraform init    
+   ```
 
 4. Plan the Network module changes:  
 ```
@@ -157,7 +158,8 @@ Before you begin, make sure you have the following information ready:
 6. After successful application, configure kubectl to interact with your new EKS cluster:  
 ```
 
-   aws eks update-kubeconfig --name <cluster-name> --region <aws-region>   ```
+   aws eks update-kubeconfig --name <cluster-name> --region <aws-region>   
+   ```
 
 8. Configure kubectl:
 
