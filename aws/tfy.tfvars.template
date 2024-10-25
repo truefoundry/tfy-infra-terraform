@@ -8,6 +8,7 @@ tags = {
   "truefoundry" = "tfy-dev"
 }
 vpc_cidr = "10.10.0.0/16"
+
 # Truefoundry variables
 tenant_name       = ""
 tenant_token      = ""

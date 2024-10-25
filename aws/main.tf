@@ -6,6 +6,16 @@ provider "aws" {
   profile = var.aws_profile
 }
 
+# Configure Terraform backend
+terraform {
+  backend "s3" {
+    bucket = "harshit-poc"
+    key    = "terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
+
 # Define variables
 
 variable "cluster_name" {}
@@ -26,14 +36,6 @@ variable "private_subnet_ids" { type = list(string) }
 variable "public_subnet_ids" { type = list(string) }
 
 
-# Configure Terraform backend
-terraform {
-  backend "s3" {
-    bucket = "harshit-poc"
-    key    = "terraform.tfstate"
-    region = "us-east-1"
-  }
-}
 
 # Add this data source after the existing aws_eks_cluster data source
 data "aws_eks_cluster_auth" "cluster" {
@@ -66,6 +68,7 @@ module "network" {
 
 module "eks" {
   source                                 = "truefoundry/truefoundry-cluster/aws"
+  depends_on                             = [module.network]
   version                                = "0.6.4"
   cloudwatch_log_group_retention_in_days = "1"
   cluster_addons_coredns_version         = "v1.11.3-eksbuild.1"
