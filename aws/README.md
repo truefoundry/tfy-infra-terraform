@@ -15,6 +15,7 @@ This repository contains Terraform configurations to set up the Truefoundry infr
 8. [Next Steps](#next-steps)
 9. [Terraform Documentation](#terraform-documentation)
 
+
 ## Prerequisites
 
 Ensure you have the following tools installed:
@@ -75,11 +76,13 @@ Additionally, you need:
    terraform init
    ```
 
+
 3. **Apply Network Module**
 
    ```bash
    terraform apply -target=module.network -var-file=tfy.tfvars
    ```
+
 
 4. **Apply Remaining Modules**
 
@@ -194,6 +197,7 @@ No requirements.
 | [aws_eks_cluster_auth.cluster](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/eks_cluster_auth) | data source |
 
 ## Inputs
+
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
